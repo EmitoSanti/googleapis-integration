@@ -45,10 +45,10 @@ export const CREDENCIALS = {
     auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
     client_secret: "y_eCBopsYrVgKyzllVnVsxzh",
     redirect_uris: [
-      "https://gsm-auth-server.herokuapp.com/v1/google/code/"
+      "https://googleapis-integration.herokuapp.com/v1/google/code/"
     ],
     javascript_origins: [
-      "https://gsm-auth-server.herokuapp.com"
+      "https://googleapis-integration.herokuapp.com"
     ]
   }
 };
