@@ -7,6 +7,8 @@ This repository contains the node.js implementation of googleapis.
 ### Google
 
 + This document explains how web server applications use Google API Client Libraries: [Google OAuth](https://developers.google.com/identity/protocols/oauth2/web-server)
++ Reads and writes Google Sheets. [Google Sheets API](https://developers.google.com/sheets/api/reference/rest)
++ Google APIs Node.js Client library for using Google APIs. [Google APIs Node.js Client](https://www.npmjs.com/package/googleapis)
 + Node.js Quickstart for Googleapis Sheets: [Node.js Quickstart](https://developers.google.com/people/quickstart/nodejs)
 + Enable Google Sheet API and create user usage credentials [Google Cloud Platform](https://console.cloud.google.com/)
 
