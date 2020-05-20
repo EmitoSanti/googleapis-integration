@@ -51,3 +51,7 @@ Note: **The scripts in the package.json are set to run on the heroku platform. T
 + Generate new Google OAuth Authorization. [http://localhost:8080/google/newcode](http://localhost:8080/google/newcode)
 + Check if the Google OAuth Authorization is valid. [http://localhost:8080/google/authorize](http://localhost:8080/google/authorize)
 + Migrate from Google Sheet to MongoDB. [http://localhost:8080/google/startmigration](http://localhost:8080/google/startmigration)
+
+## Shared google sheet
+
+[Shared personal google sheet](https://drive.google.com/drive/folders/1hGTCml39GChdkHtR3okIpY-4QPBPwnlb?usp=sharing)
