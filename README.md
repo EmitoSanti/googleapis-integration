@@ -1,42 +1,51 @@
-Para levantar el back-end ir al directorio "auth-node" en consola y hacer "npm install" (solo una vez para instalar las dependencias).
-Luego en el mismo directorio, ya instalada las despendecias de npm_module hacer en terminal "c".
-La web se hostea en https://localhost:8080/
+# Integration of googleapis
 
+This repository contains the node.js implementation of googleapis.
 
+## References
 
+### Google
 
-https://console.cloud.google.com/
++ This document explains how web server applications use Google API Client Libraries: [Google OAuth](https://developers.google.com/identity/protocols/oauth2/web-server)
++ Node.js Quickstart for Googleapis Sheets: [Node.js Quickstart](https://developers.google.com/people/quickstart/nodejs)
++ Enable Google Sheet API and create user usage credentials [Google Cloud Platform](https://console.cloud.google.com/)
 
+### Other repositories
 
+Server application seed: [Nestor Marsollier Repository](https://github.com/nmarsollier/ecommerce)
 
+### More info
 
+My medium profile: [Emilino Santi](https://medium.com/@losantiemi)
+Note: **I'm writing a post explaining the implementation of googleapis. Soon, step by step**
 
+## Dependencies
 
+### Node.JS
 
-
-[localhost:3000](http://localhost:3000/)
-
-## Dependencias
-
-### Node 8
-
-Seguir los pasos de instalación del sitio oficial [nodejs.org](https://nodejs.org/en/)
+Install Node.JS [nodejs.org](https://nodejs.org/en/)
 
 ### MongoDb
 
-La base de datos se almacena en MongoDb.
+Install MongoDb [mongodb.com](https://docs.mongodb.com/manual/installation/)
 
-Ver tutorial de instalación en [README.md](../README.md) en la raíz.
+## Run server application
 
-## Ejecución
+### Run mongodb
 
-Abrir ventana de comandos en la carpeta del microservicio y ejecutar :
+Start mongod services
+
+### Run on the root folder
 
 ```bash
 npm install
-npm start
+npm run dev
 ```
 
-## Archivo .env
+Note: **The scripts in the package.json are set to run on the heroku platform. The "npm start" command should not be used in local.**
 
-Este archivo permite configurar diversas opciones de la app, ver ejemplos en .env.example
+## Run endpoints in postman, insomnia or other
+
++ Generate new Google OAuth Authorization. [http://localhost:8080/google/newcode](http://localhost:8080/google/newcode)
++ Check if the Google OAuth Authorization is valid. [http://localhost:8080/google/authorize](http://localhost:8080/google/authorize)
++ Migrate from Google Sheet to MongoDB. [http://localhost:8080/google/startmigration](http://localhost:8080/google/startmigration)

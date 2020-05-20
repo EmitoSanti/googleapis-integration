@@ -8,12 +8,12 @@ export class ArticlesService {
 
         return new Promise<Boolean>((resolve, reject) => {
             try {
-                Article.insertMany(articles); // https://docs.mongodb.com/manual/reference/method/db.collection.insertMany/
-                console.log("Finish migration");
+                Article.insertMany(articles);
+                console.log("Insert completed.");
                 resolve(true);
             } catch (error) {
                 console.log("error: " + error);
-                reject();
+                reject(error);
             }
         });
     }
@@ -24,7 +24,7 @@ export class ArticlesService {
         return new Promise<Boolean>((resolve, reject) => {
             try {
                 Article.collection.drop();
-                console.log("Article Collection is dropped");
+                console.log("Article Collection is dropped.");
                 resolve(true);
             } catch (error) {
                 console.log("error: " + error);

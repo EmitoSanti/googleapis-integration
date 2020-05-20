@@ -1,81 +1,29 @@
 "use strict";
 
-import * as _ from "lodash";
 import * as error from "../server/error";
 import { google } from "googleapis";
 import { GoogleOAuth, IGoogleOAuth } from "./google-oauth";
-import * as fs from "fs"; // The code using this dependency fails if the server application does not have write permissions.
+// import * as fs from "fs"; // The code using this dependency fails if the server application does not have write permissions.
 import { ArticlesService } from "../articles/articles.service";
 import {
   SCOPES,
   SPREAD_SHEET_ID,
   VERSION_GOOGLE_API,
   RANGE_EASY,
-  RANGE_HARD,
-  CREDENCIALS_LOCAL,
   CREDENCIALS,
   PAGES_NAMES
 } from "./sheets.constants";
 
 export class SheetsService {
   static sheets = google.sheets(VERSION_GOOGLE_API);
-  static oAuth2Client = new google.auth.OAuth2(
+  static oAuth2Client = new google.auth.OAuth2( // Using OAuth 2.0 to Access Google APIs. developers.google.com/identity/protocols/oauth2
     CREDENCIALS.web.client_id,
     CREDENCIALS.web.client_secret,
     CREDENCIALS.web.redirect_uris[0]
-  );
+  ); // oAuth2Client has it global reach on the SheetsService. Because it is important that there is only one oAuth2Client object.
 
-  static async readGoogleOAuth() {
-    console.log("SheetsService readGoogleOAuth()");
-
-    try {
-      const token = await GoogleOAuth.findOne({}).sort({ $natural: -1 }).limit(1);
-      if (!token) {
-        throw error.newError(error.ERROR_NOT_FOUND, "No hay credencial habilitada");
-      }
-      console.log("readGoogleOAuth token: " + JSON.stringify(token.token));
-      return Promise.resolve(token.token);
-    } catch (err) {
-      return Promise.reject(err);
-    }
-  }
-
-  static createGoogleOAuth(data: any) {
-    console.log("SheetsService createGoogleOAuth(): " + JSON.stringify(data));
-
-    const googleToken = {
-      token: {
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        scope: data.scope,
-        token_type: data.token_type,
-        expiry_date: data.expiry_date
-      }
-    };
-    console.log("googleToken: " + JSON.stringify(googleToken));
-    return new Promise<IGoogleOAuth>((resolve, reject) => {
-      try {
-        resolve(GoogleOAuth.create(googleToken));
-      }
-      catch (error) {
-        reject(error);
-      }
-    });
-  }
-
-  static authorization(token: any) {
-    console.log("SheetsService authorization()");
-
-    const promise = new Promise((resolve, reject) => {
-      this.oAuth2Client.setCredentials(token); // si hay token se puede trabajar con google // se parsea porque viene en texto plano
-      console.log("Credenciales access generated: " + JSON.stringify(this.oAuth2Client));
-      // if (err) return reject(err); // ver si lo soporta en la documentacion de setCredentials
-      return resolve(this.oAuth2Client);
-    });
-    return promise;
-  }
-
-  static getNewCode() {
+  /* Google OAuth */
+  static getNewCode() { // We request authorization to Google OAuth. developers.google.com/people/quickstart/nodejs
     console.log("SheetsService getNewCode()");
 
     const promise = new Promise((resolve, reject) => {
@@ -83,8 +31,13 @@ export class SheetsService {
         access_type: "offline",
         scope: SCOPES
       });
-      console.log("Authorize this app by visiting this url: ", authUrl);
-      // if (err) return reject(err); // ver si lo soporta en la documentacion de generateAuthUrl
+      console.log("Authorize this app by visiting this url: ", authUrl); // URL to do the last step to have Google OAuth authorization.
+      /* Browse to the provided URL in your web browser.
+        If you are not already logged into your Google account, you will be prompted to log in.
+        If you are logged into multiple Google accounts, you will be asked to select one account to use for the authorization.
+        The token will be sent directly to the server application.
+      */
+      // if (err) return reject(err); // callbacks?
       return resolve(authUrl);
     });
     return promise;
@@ -112,83 +65,77 @@ export class SheetsService {
         return resolve(token);
       });
     });
-    return promise; // next promise, save token in DB.
+    return promise; // next promise, The token will save in DB.
   }
 
-  static async sortByBrand(authorization: any) {
-    console.log("SheetsService sortByBrand()");
-    const auth = authorization;
-    // const promise = new Promise<any>(async (resolve, reject) => {
-    const pagesSheet: string[] = PAGES_NAMES;
-    const allRequests: any[] = [];
-    _.forEach(pagesSheet, (page, key) => {
-      console.log("key: " + key);
-      allRequests.push({
-        sortRange: {
-          range: { // RANGE_HARD
-            sheetId: key,
-            startRowIndex: 2,
-            // endRowIndex: 8,
-            startColumnIndex: 0,
-            endColumnIndex: 13
-          },
-          sortSpecs: [
-            {
-              dimensionIndex: 0, // index column
-              sortOrder: "ASCENDING" // DESCENDING
-            }
-          ]
-        }
-      });
-    });
+  static createGoogleOAuth(data: any) { // We save the token generated and sent by Google OAuth in MongoDB.
+    console.log("SheetsService createGoogleOAuth(): " + JSON.stringify(data)); // Analyze JSON structure. jsoneditoronline.org
 
-    const request = {
-      spreadsheetId: SPREAD_SHEET_ID,
-      resource: {
-        requests: allRequests
-      },
-      auth: auth
+    const googleToken = {
+      token: {
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        scope: data.scope,
+        token_type: data.token_type,
+        expiry_date: data.expiry_date
+      }
     };
-    console.log("request: " + JSON.stringify(request, null, 2));
-    //   try {
-    //     const sheets = google.sheets({ version: VERSION_GOOGLE_API, auth });
-    //     const response = await sheets.spreadsheets.batchUpdate(request);
-    //     console.log("response: " + JSON.stringify(response, null, 2));
-    //     return resolve("It sorted");
-    //   } catch (err) {
-    //     console.error("error: " + err);
-    //     return reject(err);
-    //   }
-    // });
-    const sheets = google.sheets({ version: VERSION_GOOGLE_API, auth });
-    const promise = new Promise<any>((resolve, reject) => {
-      sheets.spreadsheets.batchUpdate(request, (err: any, res: any) => {
-        if (err) {
-          console.log("The API returned an error: " + err);
-          return reject(err);
-        }
-        resolve("It sorted");
-      });
+    console.log("Google OAuth token received: " + JSON.stringify(googleToken));
+    return new Promise<IGoogleOAuth>((resolve, reject) => {
+      try {
+        resolve(GoogleOAuth.create(googleToken));
+      }
+      catch (err) {
+        reject(err);
+      }
     });
+  }
 
+  static async readGoogleOAuth() { // We get the last Google OAuth Token that we previously saved.
+    console.log("SheetsService readGoogleOAuth()");
+
+    try {
+      const token = await GoogleOAuth.findOne({}).sort({ $natural: -1 }).limit(1); // We get the last document where we keep the tokens.
+      if (!token) {
+        throw error.newError(error.ERROR_NOT_FOUND, "Token not found.");
+      }
+      console.log("Last token found: " + JSON.stringify(token.token));
+      return token.token;
+    } catch (err) {
+      return err;
+    }
+  }
+
+  static authorization(token: any) { // Authorization is obtained from the user's credentials and valid token.
+    console.log("SheetsService authorization()");
+
+    const promise = new Promise((resolve, reject) => {
+      this.oAuth2Client.setCredentials(token);
+      console.log("Credenciales access generated: " + JSON.stringify(this.oAuth2Client));
+      // if (err) return reject(err); // callbacks?
+      return resolve(this.oAuth2Client);
+    });
     return promise;
   }
 
-  static getAllData(authorization: any) { // de any a AUTH
-    console.log("SheetsService getAllData()");
+  /* Google Sheets */
+  static getAllData(authorization: any) {
+    console.log("SheetsService getAllData() :" + JSON.stringify(authorization));
 
     const auth = authorization;
-    const pagesSheet: string[] = PAGES_NAMES;
-    const allRanges: any[] = [];
-    _.forEach(pagesSheet, (page) => {
-      const pageSanitized = page.trim();
-      const rango = `${pageSanitized}${RANGE_EASY}`;
-      const rangoSanitized = rango.toString();
-      allRanges.push(rangoSanitized);
+    const pagesSheet: string[] = PAGES_NAMES; // Array with file page names.
+    const allRanges: any[] = []; // Array with file page names, concatenated to range.
+
+    pagesSheet.forEach((page) => {
+      const pageSanitized = page.trim(); // developer.mozilla.org/es/docs/Web/JavaScript/Referencia/Objetos_globales/String/Trim
+      const range = `${pageSanitized}${RANGE_EASY}`; // ES6 to concatenate, Template literals (Template strings).
+      allRanges.push(range);
     });
-    console.log("allRanges: " + JSON.stringify(allRanges));
+
+    console.log("allRanges: " + JSON.stringify(allRanges)); // Analyze JSON structure. jsoneditoronline.org
     const promise = new Promise<any>((resolve, reject) => {
       const sheets = google.sheets({ version: VERSION_GOOGLE_API, auth });
+
       const request = {
         spreadsheetId: SPREAD_SHEET_ID,
         ranges: allRanges,
@@ -196,156 +143,56 @@ export class SheetsService {
         dateTimeRenderOption: "SERIAL_NUMBER",
         auth: auth
       };
+
       sheets.spreadsheets.values.batchGet(request, (err: any, res: any) => {
         if (err) {
           console.log("The API returned an error: " + err);
           return reject(err);
         }
-        console.log("Datos: " + JSON.stringify(res.data));
+
+        // Mapping of the data received.
+        // In a nutshell. For each page you get an array of arrays of the rows.
+        console.log("Data: " + JSON.stringify(res.data)); // Analyze JSON structure. jsoneditoronline.org
         const values = res.data.valueRanges;
-        _.forEach(values, (val) => {
+        values.forEach((val: any) => {
           const columns = val.values;
           if (columns) {
-            // console.log("Datos: " + JSON.stringify(rows));
-            const allRows = columns.map(function (column: any) { // de any a IArticle
-              // console.log("marca: " + `${row[0]}` + "   modelo: " + `${row[1]}` + "   mpn: " + `${row[2]}`);
+            const allRows = columns.map((column: any) => {
               return {
-                brand: column[0],
-                name: column[1],
-                mpn: column[2],
-                services: [
+                itemId: column[0], // By column index
+                itemName: column[1],
+                itemBrand: column[2],
+                itemDescription: column[3],
+                qtyStock: column[4],
+                unitPrice: column[5],
+                totalPrice: column[6],
+                sales: [
                   {
-                    name: "liberar o base",
-                    value: column[3]
-                  },
-                  {
-                    name: "full",
-                    value: column[4]
-                  },
-                  {
-                    name: "cuenta google",
-                    value: column[5]
-                  },
-                  {
-                    name: "cuenta propietaria",
-                    value: column[6]
-                  },
-                  {
-                    name: "software",
-                    value: column[7]
-                  },
-                  {
-                    name: "resetear patron",
+                    name: "Local Sale Price",
                     value: column[8]
                   },
                   {
-                    name: "fix touch",
-                    value: column[9]
-                  }
-                ],
-                additionalServices: [
-                  {
-                    name: "liberar",
+                    name: "Export Price",
                     value: column[10]
-                  },
-                  {
-                    name: "full",
-                    value: column[11]
-                  },
-                  {
-                    name: "cuenta google",
-                    value: column[12]
-                  },
-                  {
-                    name: "cuenta propietaria",
-                    value: column[13]
                   }
                 ]
               };
             });
-            console.log("allRows: " + JSON.stringify(allRows));
+            // In a nutshell. The map function is used to create an array of objects. Each object contains the data from one row.
+            console.log("allRows: " + JSON.stringify(allRows)); // Analyze JSON structure. jsoneditoronline.org/
             ArticlesService.migrationArticles(allRows)
               .then(() => {
-                return resolve("Fin migracion");
+                return resolve("Migration completed.");
               })
-              .catch(
-                (error) => {
-                  return reject(error);
-                }
-              );
+              .catch((error) => {
+                return reject(error);
+              });
           } else {
-            console.log("No data found.");
-            return reject("Algo se rumpio");
+            return reject("No data found.");
           }
         });
       });
     });
     return promise;
-  }
-}
-
-async function create(auth: any) {
-  const request = {
-    resource: {
-      properties: {
-        title: "HOLA"
-      }
-    },
-    auth: this.oAuth2Client,
-  };
-  try {
-    const response = (await this.sheets.spreadsheets.create(request)).data; // va sin this.
-    console.log(JSON.stringify(response, null, 2));
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-async function getByValue(auth: any) { // no sirve pa mierda
-  console.log("sortByBrand");
-  const request = {
-    spreadsheetId: "1B0qopCbei9rLXQbfmUzC1try8l93lTdtgBT4LILjDT0", // pasar a constante
-    resource: {
-      requests: [
-        {
-          addFilterView: {
-            filter: {
-              filterViewId: 0,
-              title: "A",
-              range: {
-                sheetId: 0, // index sheet
-                startRowIndex: 0, // index start row // se puede borrar para que sea infinita
-                endRowIndex: 11, // index end row // se puede borrar para que sea infinita
-                startColumnIndex: 0, // index start column // se puede borrar para que sea infinita
-                endColumnIndex: 4 // index end column // se puede borrar para que sea infinita
-              },
-              sortSpecs: [
-                {
-                  dimensionIndex: 0, // index column
-                  sortOrder: "ASCENDING" // DESCENDING
-                }
-              ],
-              criteria: {
-                0: {
-                  condition: {
-                    type: "TEXT_CONTAINS",
-                    values: {
-                      userEnteredValue: "caca"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      ]
-    },
-    auth: auth
-  };
-  try {
-    const response = (await this.sheets.spreadsheets.batchUpdate(request)).data; // va sin this.
-    console.log("response: " + JSON.stringify(response, null, 2));
-  } catch (err) {
-    console.error("error: " + err);
   }
 }

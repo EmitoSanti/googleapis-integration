@@ -3,7 +3,7 @@
 import { Document, Schema } from "mongoose";
 const mongoose = require("mongoose");
 
-export interface IServices extends Document {
+export interface ISales extends Document {
   name: string;
   value: string;
   description: string;
@@ -13,10 +13,10 @@ export interface IArticle extends Document {
   itemName: string;
   itemBrand: string;
   itemDescription: string;
-  qtyStock: number;
-  unitPrice: number;
-  totalPrice: number;
-  sales: IServices[];
+  qtyStock: string;
+  unitPrice: string;
+  totalPrice: string;
+  sales: ISales[];
   discontinue: Boolean;
   created: Date;
   updated: Date;
@@ -49,17 +49,17 @@ const ArticleSchema = new Schema({
     required: "Item Description is required"
   },
   qtyStock: {
-    type: Number,
+    type: String,
     trim: true,
     required: "Quantity is required"
   },
   unitPrice: {
-    type: Number,
+    type: String,
     trim: true,
     required: "Unit Price is required"
   },
   totalPrice: {
-    type: Number,
+    type: String,
     trim: true,
     required: "Total Price is required"
   },
@@ -70,7 +70,7 @@ const ArticleSchema = new Schema({
         trim: true
       },
       value: {
-        type: Number,
+        type: String,
         trim: true
       },
       description: {

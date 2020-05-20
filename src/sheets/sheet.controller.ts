@@ -3,52 +3,48 @@ import { SheetsService } from "./sheets.service"; // ver esto falla index.ts cre
 import { ArticlesService } from "../articles/articles.service";
 
 export class SheetsController {
-  static getNewCode(req: express.Request, res: express.Response) {
-    console.log("SheetsController getNewCode()");
+  static getNewCode(req: express.Request, res: express.Response) { // We request authorization to Google OAuth.
 
-    SheetsService.getNewCode()
-      .then((response: any) => {
-        console.log("googleURL: ", response);
+    SheetsService.getNewCode() // We request authorization to Google OAuth.
+      .then((response) => {
+        console.log("Browse to the provided URL in your web browser.");
         res.status(200).send(response);
       })
-      .catch((err: any) => {
-        res.status(400).json(err);
-        // error.handle(res, err);
+      .catch((error) => {
+        res.status(400).json(error);
       });
   }
 
-  static setNewCode(req: express.Request, res: express.Response) {
+  static setNewCode(req: express.Request, res: express.Response) { // Google Oauth sends a code that is used to get the token.
     console.log("SheetsController setNewCode() code: " + JSON.stringify(req.query.code));
-    console.log("SheetsController setNewCode() scope: " + JSON.stringify(req.query.scope));
+    console.log("SheetsController setNewCode() scope: " + JSON.stringify(req.query.scope)); // It is not necessary.
     const newCode = req.query.code;
 
-    SheetsService.setNewCode(newCode)
+    SheetsService.setNewCode(newCode) // Google Oauth sends a code that is used to get the token.
       .then((token: any) => {
-        return SheetsService.createGoogleOAuth(token);
+        return SheetsService.createGoogleOAuth(token); // We save the token generated and sent by Google OAuth in MongoDB.
       })
-      .catch((err) => {
-        res.status(400).json(err);
+      .then((response) => {
+        console.log("response: " + JSON.stringify(response));
+        res.status(200).json(response);
+      })
+      .catch((error) => {
+        res.status(400).json(error);
       });
   }
 
-  static authorize(req: express.Request, res: express.Response) {
+  static authorize(req: express.Request, res: express.Response) { // Authorization is obtained from the user's credentials and valid token.
     console.log("SheetsController authorize()");
 
-    SheetsService.readGoogleOAuth()
+    SheetsService.readGoogleOAuth() // We get the last Google OAuth Token that we previously saved.
       .then((token) => {
-        return SheetsService.authorization(token);
+        return SheetsService.authorization(token); // Authorization is obtained from the user's credentials and valid token.
       })
-      .then((response) => {
+      .then(() => {
         res.status(200).json("authorized");
       })
       .catch((err) => {
-        // err viene con el path del archivo que fallo si lo mando al front crea una pista para romper la seguridad de la plataforma
-        const error = {
-          errno: err.errno,
-          code: err.code,
-          syscall: err.syscall
-        };
-        res.status(400).json(error);
+        res.status(400).json(err);
       });
   }
 
@@ -56,32 +52,27 @@ export class SheetsController {
     console.log("SheetsController startMigration()");
     let authorization: any = {};
 
-    SheetsService.readGoogleOAuth()
-      .then((token: any) => {
+    SheetsService.readGoogleOAuth() // We get the last Google OAuth Token that we previously saved.
+      .then((token) => {
         console.log("token: " + token);
         return SheetsService.authorization(token);
       })
-      .then((response: any) => {
-        console.log("response token: " + JSON.stringify(response));
+      .then((response) => {
+        console.log("authorization? " + JSON.stringify(response));
         authorization = response;
         return ArticlesService.dropArticles();
       })
-      // .then((response: any) => { // sacar a una funcionalidad por afuera de este flujo ... que el usuario valla eligiendo que pagina ordenar.
-      //   console.log("Drop Articles Collection: " + response);
-      //   return SheetsService.sortByBrand(authorization);
-      // })
-      .then((response: any) => {
+      .then((response) => {
         console.log("Articles Collection is dropped?: " + JSON.stringify(response));
         return SheetsService.getAllData(authorization);
       })
-      .then((resp) => {
-        console.log("resp: " + JSON.stringify(resp));
-        res.status(200);
+      .then((response) => {
+        console.log("response: " + JSON.stringify(response));
+        res.status(200).json(response);
       })
-      .catch((err) => {
-        console.log("err: " + JSON.stringify(err));
-        res.status(400).json(err);
-        // error.handle(res, err); usar handle??
+      .catch((error) => {
+        console.log("error: " + JSON.stringify(error));
+        res.status(400).json(error);
       });
   }
 }
