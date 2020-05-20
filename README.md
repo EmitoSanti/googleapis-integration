@@ -1,6 +1,6 @@
 # Integration of googleapis
 
-This repository contains the node.js implementation of googleapis.
+This repository contains the node.js application server for implementation of googleapis.
 
 ## References
 
